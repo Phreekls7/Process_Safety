@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
+  <POU Name="PRG_StudyTask" Id="{ffad3d8f-d97f-48e9-977e-f3b95e9449b9}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM PRG_StudyTask
+VAR
+    tWorkDuration  : TIME := T#25m;
+    tBreakDuration : TIME := T#0s;
+
+    fbWorkTimer    : TON;
+    fbBreakTimer   : TON;
+
+    bStartEdge     : BOOL;
+    bPauseEdge     : BOOL;
+    bResetEdge     : BOOL;
+
+    bStartOld      : BOOL;
+    bPauseOld      : BOOL;
+    bResetOld      : BOOL;
+END_VAR
+
+(* Rising edge detection on commands *)
+bStartEdge := g_bCmdStart AND NOT bStartOld;
+bPauseEdge := g_bCmdPause AND NOT bPauseOld;
+bResetEdge := g_bCmdReset AND NOT bResetOld;
+
+bStartOld := g_bCmdStart;
+bPauseOld := g_bCmdPause;
+bResetOld := g_bCmdReset;
+
+CASE g_eState OF
+
+    (* ================= Idle ================= *)
+    Idle:
+        (* stop both timers *)
+        fbWorkTimer(IN := FALSE, PT := tWorkDuration);
+        fbBreakTimer(IN := FALSE, PT := tBreakDuration);
+
+        g_tRemaining   := T#0s;
+        g_bSessionDone := FALSE;
+
+        IF bStartEdge THEN
+            fbWorkTimer(IN := TRUE, PT := tWorkDuration);
+            g_eState := Work;
+        END_IF
+
+    (* ================= Work ================= *)
+    Work:
+        fbWorkTimer(IN := TRUE, PT := tWorkDuration);
+        g_tRemaining := tWorkDuration - fbWorkTimer.ET;
+
+        IF bPauseEdge THEN
+            fbWorkTimer(IN := FALSE, PT := tWorkDuration);
+            g_eState := Paused;
+
+        ELSIF bResetEdge THEN
+            fbWorkTimer(IN := FALSE, PT := tWorkDuration);
+            g_eState := Idle;
+
+        ELSIF fbWorkTimer.Q THEN
+            (* work block finished *)
+            fbWorkTimer(IN := FALSE, PT := tWorkDuration);
+
+            g_iWorkSessions := g_iWorkSessions + 1;
+
+            (* === FUNCTION CALL HERE === *)
+            tBreakDuration := CalcBreakTime(iWorkSessions := g_iWorkSessions);
+            g_tLastBreakTime := tBreakDuration;
+
+            fbBreakTimer(IN := TRUE, PT := tBreakDuration);
+
+            IF tBreakDuration >= T#10m THEN
+                g_eState := LongBreak;
+            ELSE
+                g_eState := ShortBreak;
+            END_IF
+        END_IF
+
+    (* ========== ShortBreak / LongBreak ========== *)
+    ShortBreak,
+    LongBreak:
+        fbBreakTimer(IN := TRUE, PT := tBreakDuration);
+        g_tRemaining := tBreakDuration - fbBreakTimer.ET;
+
+        IF bResetEdge THEN
+            fbBreakTimer(IN := FALSE, PT := tBreakDuration);
+            g_eState := Idle;
+
+        ELSIF fbBreakTimer.Q THEN
+            fbBreakTimer(IN := FALSE, PT := tBreakDuration);
+            g_bSessionDone := TRUE;
+            g_eState := Idle;
+        END_IF
+
+    (* ================= Paused ================= *)
+    Paused:
+        (* keep timers stopped; remaining time is frozen *)
+        fbWorkTimer(IN := FALSE, PT := tWorkDuration);
+        fbBreakTimer(IN := FALSE, PT := tBreakDuration);
+
+        IF bStartEdge THEN
+            (* resume work *)
+            fbWorkTimer(IN := TRUE, PT := tWorkDuration);
+            g_eState := Work;
+        ELSIF bResetEdge THEN
+            g_eState := Idle;
+        END_IF
+
+END_CASE
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <LineIds Name="PRG_StudyTask">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

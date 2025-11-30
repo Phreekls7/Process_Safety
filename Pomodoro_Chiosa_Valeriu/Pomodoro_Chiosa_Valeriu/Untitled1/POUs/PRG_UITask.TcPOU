@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
+  <POU Name="PRG_UITask" Id="{4aa08dad-b069-4eb2-b8ac-68a8a02e61c2}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM PRG_UITask
+VAR
+    fbBlink       : TON;
+    tBlinkPeriod  : TIME;
+    bLedWorkInt   : BOOL;
+END_VAR
+
+(* Choose blink speed based on state *)
+CASE g_eState OF
+    Idle:
+        tBlinkPeriod := T#0s;      (* LED off *)
+    Work:
+        tBlinkPeriod := T#1s;      (* slow blink while working *)
+    ShortBreak:
+        tBlinkPeriod := T#500ms;   (* faster blink on short break *)
+    LongBreak:
+        tBlinkPeriod := T#250ms;   (* very fast blink on long break *)
+    Paused:
+        tBlinkPeriod := T#2s;      (* slow blink when paused *)
+END_CASE
+
+(* Blink logic *)
+IF tBlinkPeriod > T#0s THEN
+    fbBlink(IN := TRUE, PT := tBlinkPeriod);
+    IF fbBlink.Q THEN
+        fbBlink(IN := FALSE, PT := tBlinkPeriod);
+        bLedWorkInt := NOT bLedWorkInt;
+    END_IF
+ELSE
+    fbBlink(IN := FALSE, PT := tBlinkPeriod);
+    bLedWorkInt := FALSE;
+END_IF
+
+(* Write UI outputs to global vars *)
+g_bLedWork  := bLedWorkInt AND (g_eState = Work);
+g_bLedBreak := (g_eState = ShortBreak) OR (g_eState = LongBreak);
+
+CASE g_eState OF
+    Idle:       g_sStatusText := 'Idle';
+    Work:       g_sStatusText := 'Working';
+    ShortBreak: g_sStatusText := 'Short break';
+    LongBreak:  g_sStatusText := 'Long break';
+    Paused:     g_sStatusText := 'Paused';
+END_CASE
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <LineIds Name="PRG_UITask">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

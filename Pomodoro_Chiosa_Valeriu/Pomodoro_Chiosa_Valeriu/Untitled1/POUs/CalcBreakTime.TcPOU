@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
+  <POU Name="CalcBreakTime" Id="{f84bf3ae-d4e2-4b8e-b080-cad5e50516b3}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION CalcBreakTime : TIME
+VAR_INPUT
+    iWorkSessions : INT;   (* number of finished work blocks *)
+END_VAR
+
+(* Long break after every 4th work block, short break otherwise *)
+IF (iWorkSessions > 0) AND ((iWorkSessions MOD 4) = 0) THEN
+    CalcBreakTime := T#15m;    (* long break *)
+ELSE
+    CalcBreakTime := T#5m;     (* short break *)
+END_IF
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <LineIds Name="CalcBreakTime">
+      <LineId Id="7" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

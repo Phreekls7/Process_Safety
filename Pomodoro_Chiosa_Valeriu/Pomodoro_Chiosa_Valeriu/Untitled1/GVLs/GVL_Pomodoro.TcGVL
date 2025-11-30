@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
+  <GVL Name="GVL_Pomodoro" Id="{3b37cd21-bfed-45c3-87fd-57d1497285b6}">
+    <Declaration><![CDATA[VAR_GLOBAL
+    (* Commands (set from HMI, keyboard, or watch window) *)
+    g_bCmdStart      : BOOL := FALSE;   (* rising edge starts / resumes work *)
+    g_bCmdPause      : BOOL := FALSE;   (* rising edge pauses work *)
+    g_bCmdReset      : BOOL := FALSE;   (* rising edge stops and goes to Idle *)
+
+    (* Process state shared by both tasks *)
+    g_eState         : E_StudyState := Idle;
+    g_tRemaining     : TIME := T#0s;     (* remaining time in current phase *)
+    g_iWorkSessions  : INT := 0;         (* finished work blocks *)
+    g_bSessionDone   : BOOL := FALSE;    (* goes TRUE when break finishes *)
+
+    (* “UI outputs” written by Task 2 *)
+    g_sStatusText    : STRING(80) := 'Idle';
+    g_bLedWork       : BOOL := FALSE;    (* linked to LED or coil *)
+    g_bLedBreak      : BOOL := FALSE;    (* linked to LED or coil *)
+
+    (* Just to show result of the function in watch window *)
+    g_tLastBreakTime : TIME := T#0s;
+END_VAR
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
+  <DUT Name="E_StudyState" Id="{1cd7fa6c-6b59-4647-831f-fd0218a865d0}">
+    <Declaration><![CDATA[(* DUT: E_StudyState *)
+
+TYPE E_StudyState :
+(
+    Idle,        (* no timer running *)
+    Work,        (* working 25 min *)
+    ShortBreak,  (* 5 min break *)
+    LongBreak,   (* 15 min break *)
+    Paused       (* paused during work *)
+);
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>
