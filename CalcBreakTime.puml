@@ -1,0 +1,32 @@
+@startuml
+title Sequence diagram - CalcBreakTime called by PRG_StudyTask
+
+participant "PRG_StudyTask\n(Task_Study)" as Study
+participant "GVL_Pomodoro" as GVL
+participant "CalcBreakTime()\nFUNCTION" as Func
+
+== End of work block ==
+
+Study -> GVL : fbWorkTimer.Q = TRUE
+Study -> Study : g_iWorkSessions := g_iWorkSessions + 1
+
+Study -> Func : CalcBreakTime(iWorkSessions := g_iWorkSessions)
+activate Func
+
+alt every 4th work session
+    Func --> Study : return T#15m (long break)
+else other sessions
+    Func --> Study : return T#5m (short break)
+end
+deactivate Func
+
+Study -> Study : tBreakDuration := return value
+Study -> GVL : g_tLastBreakTime := tBreakDuration
+
+alt long break
+    Study -> GVL : g_eState := LongBreak\nstart fbBreakTimer(PT := tBreakDuration)
+else short break
+    Study -> GVL : g_eState := ShortBreak\nstart fbBreakTimer(PT := tBreakDuration)
+end
+
+@enduml
