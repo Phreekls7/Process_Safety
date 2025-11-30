@@ -1,0 +1,51 @@
+@startuml
+title State diagram - PRG_UITask (UI and LEDs)
+
+[*] --> UI_Idle
+
+state UI_Idle {
+}
+UI_Idle : g_sStatusText := "Idle"\nLEDs off
+
+UI_Idle --> UI_Work       : g_eState = Work
+UI_Idle --> UI_ShortBreak : g_eState = ShortBreak
+UI_Idle --> UI_LongBreak  : g_eState = LongBreak
+UI_Idle --> UI_Paused     : g_eState = Paused
+
+state UI_Work {
+}
+UI_Work : g_sStatusText := "Working"\nBlink g_bLedWork
+
+UI_Work --> UI_Idle       : g_eState = Idle
+UI_Work --> UI_ShortBreak : g_eState = ShortBreak
+UI_Work --> UI_LongBreak  : g_eState = LongBreak
+UI_Work --> UI_Paused     : g_eState = Paused
+
+state UI_ShortBreak {
+}
+UI_ShortBreak : g_sStatusText := "Short break"\nLED break ON
+
+UI_ShortBreak --> UI_Idle      : g_eState = Idle
+UI_ShortBreak --> UI_Work      : g_eState = Work
+UI_ShortBreak --> UI_LongBreak : g_eState = LongBreak
+UI_ShortBreak --> UI_Paused    : g_eState = Paused
+
+state UI_LongBreak {
+}
+UI_LongBreak : g_sStatusText := "Long break"\nLED break ON (different pattern)
+
+UI_LongBreak --> UI_Idle       : g_eState = Idle
+UI_LongBreak --> UI_Work       : g_eState = Work
+UI_LongBreak --> UI_ShortBreak : g_eState = ShortBreak
+UI_LongBreak --> UI_Paused     : g_eState = Paused
+
+state UI_Paused {
+}
+UI_Paused : g_sStatusText := "Paused"\nSlow blink
+
+UI_Paused --> UI_Idle       : g_eState = Idle
+UI_Paused --> UI_Work       : g_eState = Work
+UI_Paused --> UI_ShortBreak : g_eState = ShortBreak
+UI_Paused --> UI_LongBreak  : g_eState = LongBreak
+
+@enduml
