@@ -1,0 +1,52 @@
+@startuml
+title Sequence diagram - Communication between tasks via GVL
+
+actor User
+participant "PRG_StudyTask\n(Task_Study)" as Study
+participant "GVL_Pomodoro" as GVL
+participant "PRG_UITask\n(Task_UI)" as UI
+
+User -> GVL : g_bCmdStart := TRUE
+
+Study -> GVL : read g_bCmdStart, g_eState
+Study -> Study : detect rising edge of g_bCmdStart
+Study -> GVL : g_eState := Work\nstart fbWorkTimer
+Study -> GVL : g_tRemaining := tWorkDuration
+
+UI -> GVL : read g_eState, g_tRemaining
+UI -> GVL : g_sStatusText := "Working"
+UI -> GVL : g_bLedWork := blink pattern\n(g_bLedBreak := FALSE)
+
+... time passes ...
+
+Study -> GVL : update g_tRemaining\n(tWorkDuration - fbWorkTimer.ET)
+UI -> GVL : read g_tRemaining\n(update UI if needed)
+
+... end of work block ...
+
+Study -> GVL : fbWorkTimer.Q = TRUE
+Study -> Study : g_iWorkSessions++\ncall CalcBreakTime(...)
+Study -> GVL : tBreakDuration := CalcBreakTime result
+Study -> GVL : g_tLastBreakTime := tBreakDuration
+
+alt short break
+    Study -> GVL : g_eState := ShortBreak\nstart fbBreakTimer
+else long break
+    Study -> GVL : g_eState := LongBreak\nstart fbBreakTimer
+end
+
+UI -> GVL : read g_eState
+UI -> GVL : g_sStatusText := "Short break" or "Long break"
+UI -> GVL : g_bLedWork := FALSE\n g_bLedBreak := TRUE
+
+... end of break ...
+
+Study -> GVL : fbBreakTimer.Q = TRUE
+Study -> GVL : g_eState := Idle
+Study -> GVL : g_bSessionDone := TRUE
+
+UI -> GVL : read g_eState = Idle
+UI -> GVL : g_sStatusText := "Idle"
+UI -> GVL : g_bLedWork := FALSE\n g_bLedBreak := FALSE
+
+@enduml
