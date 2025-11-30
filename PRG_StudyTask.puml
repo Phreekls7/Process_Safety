@@ -1,0 +1,48 @@
+@startuml
+title State diagram - PRG_StudyTask (Pomodoro logic)
+
+[*] --> Idle
+
+state Idle {
+}
+
+Idle : g_tRemaining := 0
+Idle : g_bSessionDone := FALSE
+
+Idle --> Work : g_bCmdStart rising edge
+
+state Work {
+}
+Work : Start fbWorkTimer\nPT := tWorkDuration
+Work : g_tRemaining := tWorkDuration - fbWorkTimer.ET
+
+Work --> Paused : g_bCmdPause rising edge
+Work --> Idle   : g_bCmdReset rising edge
+
+Work --> ShortBreak : fbWorkTimer.Q\nand CalcBreakTime(...) < 10 min
+Work --> LongBreak  : fbWorkTimer.Q\nand CalcBreakTime(...) >= 10 min
+
+state ShortBreak {
+}
+ShortBreak : Run fbBreakTimer\nPT := tBreakDuration
+ShortBreak : g_tRemaining := tBreakDuration - fbBreakTimer.ET
+
+ShortBreak --> Idle : fbBreakTimer.Q /\n g_bSessionDone := TRUE
+ShortBreak --> Idle : g_bCmdReset rising edge
+
+state LongBreak {
+}
+LongBreak : Run fbBreakTimer\nPT := tBreakDuration
+LongBreak : g_tRemaining := tBreakDuration - fbBreakTimer.ET
+
+LongBreak --> Idle : fbBreakTimer.Q /\n g_bSessionDone := TRUE
+LongBreak --> Idle : g_bCmdReset rising edge
+
+state Paused {
+}
+Paused : Timers stopped\nRemaining time frozen
+
+Paused --> Work : g_bCmdStart rising edge\n(resume work)
+Paused --> Idle : g_bCmdReset rising edge
+
+@enduml
